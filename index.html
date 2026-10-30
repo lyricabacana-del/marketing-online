@@ -153,7 +153,6 @@
 
 <script>
   // ====== CONFIGURA ESTO ======
-  var SCRIPT_URL = "PEGA_AQUI_LA_URL_DE_TU_APPS_SCRIPT";
   var WHATSAPP   = "5490000000000"; // solo números, con código de país
   // ============================
 
@@ -234,19 +233,22 @@
     }
     if (wa.length < 8) return show("err", "Revisa tu número de WhatsApp.");
     if (!/^\S+@\S+\.\S+$/.test(d.get("correo"))) return show("err", "Revisa tu correo electrónico.");
-    if (SCRIPT_URL.indexOf("PEGA_AQUI") === 0) return show("err", "Falta configurar la URL del script.");
 
     btn.disabled = true; btn.textContent = "Enviando…";
 
-    fetch(SCRIPT_URL, {
+    fetch("/api/registrar", {
       method: "POST",
-      mode: "no-cors",
-      body: new URLSearchParams(d)
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(Object.fromEntries(d))
+    }).then(function(r){
+      return r.json().catch(function(){ return {}; }).then(function(j){
+        if (!r.ok || !j.ok) { var er = new Error(j.error || "No se pudo enviar. Intenta de nuevo."); er.server = true; throw er; }
+      });
     }).then(function(){
       form.reset();
       show("ok", "¡Listo! Recibimos tu registro. Te contactaremos pronto por WhatsApp.");
-    }).catch(function(){
-      show("err", "No se pudo enviar. Revisa tu conexión e intenta de nuevo.");
+    }).catch(function(e){
+      show("err", e && e.server ? e.message : "No se pudo enviar. Revisa tu conexión e intenta de nuevo.");
     }).finally(function(){
       btn.disabled = false; btn.textContent = "Enviar mi registro";
     });
